@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>arizalalmuttaqin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <h1>Kay Takoyaki</h1>
+      <p>Takoyaki, Roti Cane, dan Udon dengan pilihan isi serta topping favorit.</p>
+    </div>
+    <div class="header-actions">
+      <div class="search-box">
+        <input id="searchInput" type="search" placeholder="Cari makanan..." />
+      </div>
+      <button id="cartToggle" class="cart-button">
+        Keranjang <span id="cartCount">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="content-layout">
+    <section class="products-section">
+      <div class="section-heading">
+        <h2>Produk Populer</h2>
+        <p>Pilih makanan yang membuat harimu lebih spesial.</p>
+      </div>
+      <div id="productGrid" class="product-grid"></div>
+      <div id="emptyState" class="empty-state hidden">
+        <p>Tidak ada produk yang cocok dengan pencarianmu.</p>
+      </div>
+    </section>
+
+    <aside class="cart-panel hidden" id="cartPanel">
+      <div class="cart-header">
+        <h2>Keranjang Belanja</h2>
+        <button id="closeCart" class="close-button">×</button>
+      </div>
+      <div id="cartItems" class="cart-items"></div>
+      <div class="cart-summary">
+        <div class="summary-row">
+          <span>Subtotal</span>
+          <strong id="cartSubtotal">Rp0</strong>
+        </div>
+        <div class="summary-row hidden" id="shippingRow">
+          <span>Biaya Pengiriman</span>
+          <strong id="shippingFee">Rp0</strong>
+        </div>
+        <div class="summary-row">
+          <span>Total</span>
+          <strong id="cartTotal">Rp0</strong>
+        </div>
+        <div class="shipping-options">
+          <p>Opsi Pengiriman</p>
+          <label>
+            <input type="radio" name="deliveryOption" value="cod" checked />
+            COD (Cash on Delivery)
+          </label>
+          <label>
+            <input type="radio" name="deliveryOption" value="delivery" />
+            Pengiriman
+          </label>
+          <div id="courierOptions" class="courier-options hidden">
+            <label for="courierSelect">Pilih jasa pengiriman</label>
+            <select id="courierSelect">
+              <option value="jne">JNE (+Rp10.000)</option>
+              <option value="jnt">J&T (+Rp20.000)</option>
+              <option value="sicepat">SiCepat (+Rp30.000)</option>
+            </select>
+          </div>
+        </div>
+        <label for="paymentMethod">Metode Pembayaran</label>
+        <select id="paymentMethod">
+          <option value="transfer">Transfer Bank</option>
+          <option value="ewallet">E-Wallet</option>
+          <option value="qris">QRIS</option>
+          <option value="cash">Cash</option>
+        </select>
+        <div class="checkout-buttons">
+          <button id="checkoutSelectedButton" class="checkout-button selected">Bayar Item Terpilih</button>
+          <button id="checkoutAllButton" class="checkout-button all">Bayar Semua</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
