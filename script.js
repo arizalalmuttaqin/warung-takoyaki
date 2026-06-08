@@ -421,18 +421,44 @@ function getSelectedTotal() {
   return total;
 }
 
-function processCheckout(selectedOnly = false) {
+function getCartSubtotal(selectedOnly = false) {
+  const keys = selectedOnly ? getSelectedItems() : Array.from(cart.keys());
+  return keys.reduce((sum, key) => {
+    const item = cart.get(key);
+    return item ? sum + item.price * item.quantity : sum;
+  }, 0);
+}
+
+async function submitPayment(paymentPayload) {
+  try {
+    const response = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(paymentPayload),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.message || "Gagal menyimpan transaksi ke server.");
+    }
+
+    return await response.json();
+  } catch (error) {
+    showToast(error.message);
+    return null;
+  }
+}
+
+async function processCheckout(selectedOnly = false) {
   if (!cart.size) {
     showToast("Keranjang kosong. Tambahkan produk dulu.");
     return;
   }
 
-  if (selectedOnly) {
-    const selectedKeys = getSelectedItems();
-    if (!selectedKeys.length) {
-      showToast("Pilih minimal satu item untuk dibayar.");
-      return;
-    }
+  const selectedKeys = selectedOnly ? getSelectedItems() : Array.from(cart.keys());
+  if (selectedOnly && !selectedKeys.length) {
+    showToast("Pilih minimal satu item untuk dibayar.");
+    return;
   }
 
   const paymentMethod = document.getElementById("paymentMethod").value;
@@ -444,11 +470,42 @@ function processCheckout(selectedOnly = false) {
   }[paymentMethod] || "Metode Pembayaran";
   const shippingLabel = getShippingLabel();
   const orderType = selectedOnly ? "Item Terpilih" : "Semua Item";
-  
+  const subtotal = getCartSubtotal(selectedOnly);
+  const shippingCost = getShippingCost();
+  const totalAmount = subtotal + shippingCost;
+
+  const items = selectedKeys.map((key) => {
+    const item = cart.get(key);
+    return item
+      ? {
+          key,
+          itemName: item.itemName,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.price * item.quantity,
+        }
+      : null;
+  }).filter(Boolean);
+
+  const paymentPayload = {
+    orderType,
+    items,
+    paymentMethod,
+    shippingLabel,
+    shippingCost,
+    subtotal,
+    totalAmount,
+    timestamp: new Date().toISOString(),
+  };
+
+  const result = await submitPayment(paymentPayload);
+  if (!result) {
+    return;
+  }
+
   showToast(`${orderType} berhasil dibayar. Metode: ${methodLabel}. ${shippingLabel}.`);
-  
+
   if (selectedOnly) {
-    const selectedKeys = getSelectedItems();
     selectedKeys.forEach((key) => {
       cart.delete(key);
       checkedItems.delete(key);
@@ -457,13 +514,179 @@ function processCheckout(selectedOnly = false) {
     cart.clear();
     checkedItems.clear();
   }
-  
+
   updateCartCount();
   updateCartPanel();
 }
 
 checkoutSelectedButton.addEventListener("click", () => processCheckout(true));
 checkoutAllButton.addEventListener("click", () => processCheckout(false));
+
+// Admin Login Functionality
+const adminLoginBtn = document.getElementById("adminLoginBtn");
+const adminLoginModal = document.getElementById("adminLoginModal");
+const closeLoginModal = document.getElementById("closeLoginModal");
+const adminLoginForm = document.getElementById("adminLoginForm");
+const adminDashboard = document.getElementById("adminDashboard");
+const logoutBtn = document.getElementById("logoutBtn");
+const loginError = document.getElementById("loginError");
+
+const ADMIN_USERNAME = "arizal";
+const ADMIN_PASSWORD = "123456789";
+
+function openLoginModal() {
+  adminLoginModal.classList.remove("hidden");
+  document.getElementById("adminUsername").focus();
+}
+
+function closeLoginModalFunc() {
+  adminLoginModal.classList.add("hidden");
+  adminLoginForm.reset();
+  loginError.classList.add("hidden");
+}
+
+function showAdminDashboard() {
+  document.querySelector(".content-layout").classList.add("hidden");
+  document.querySelector(".site-header").classList.add("hidden");
+  adminDashboard.classList.remove("hidden");
+  loadAdminOrders();
+  sessionStorage.setItem("adminLoggedIn", "true");
+}
+
+function hideAdminDashboard() {
+  adminDashboard.classList.add("hidden");
+  document.querySelector(".content-layout").classList.remove("hidden");
+  document.querySelector(".site-header").classList.remove("hidden");
+  sessionStorage.removeItem("adminLoggedIn");
+}
+
+async function loadAdminOrders() {
+  try {
+    const response = await fetch("/api/payments");
+    const data = await response.json();
+
+    if (data.success && Array.isArray(data.payments)) {
+      renderAdminOrders(data.payments);
+      updateAdminStats(data.payments);
+    }
+  } catch (error) {
+    console.error("Error loading orders:", error);
+    showToast("Gagal memuat data pesanan");
+  }
+}
+
+function updateAdminStats(payments) {
+  const totalOrders = payments.length;
+  const totalRevenue = payments.reduce((sum, payment) => sum + payment.totalAmount, 0);
+
+  document.getElementById("totalOrders").textContent = totalOrders;
+  document.getElementById("totalRevenue").textContent = formatCurrency(totalRevenue);
+}
+
+function renderAdminOrders(payments) {
+  const ordersList = document.getElementById("adminOrdersList");
+  ordersList.innerHTML = "";
+
+  if (payments.length === 0) {
+    ordersList.innerHTML = '<p style="text-align: center; color: var(--muted); padding: 2rem;">Belum ada pesanan yang dibayar.</p>';
+    return;
+  }
+
+  payments.forEach((payment, index) => {
+    const items = JSON.parse(payment.items || "[]");
+    const formattedDate = new Date(payment.timestamp).toLocaleDateString("id-ID", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const itemsHTML = items
+      .map((item) => `<div class="item-entry">
+        <span>${item.itemName} (${item.quantity}x)</span>
+        <span class="item-quantity">${formatCurrency(item.total)}</span>
+      </div>`)
+      .join("");
+
+    const orderCard = document.createElement("div");
+    orderCard.className = "order-card";
+    orderCard.innerHTML = `
+      <div class="order-header">
+        <div>
+          <div class="order-id">Pesanan #${payment.id}</div>
+          <div class="order-date">${formattedDate}</div>
+        </div>
+        <span class="order-status">✓ Sudah Dibayar</span>
+      </div>
+      <div class="order-info">
+        <div class="info-row">
+          <span class="info-label">Metode Pembayaran:</span>
+          <span class="info-value">${payment.paymentMethod}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Jenis Pengiriman:</span>
+          <span class="info-value">${payment.shippingLabel}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Tipe Pesanan:</span>
+          <span class="info-value">${payment.orderType}</span>
+        </div>
+      </div>
+      <div class="order-items">
+        <h4>📋 Detail Pesanan:</h4>
+        <div class="item-list">
+          ${itemsHTML}
+        </div>
+      </div>
+      <div class="order-total">
+        <span>Total:</span>
+        <span class="total-amount">${formatCurrency(payment.totalAmount)}</span>
+      </div>
+    `;
+    ordersList.appendChild(orderCard);
+  });
+}
+
+adminLoginBtn.addEventListener("click", openLoginModal);
+closeLoginModal.addEventListener("click", closeLoginModalFunc);
+
+adminLoginForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const username = document.getElementById("adminUsername").value;
+  const password = document.getElementById("adminPassword").value;
+
+  if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    closeLoginModalFunc();
+    showAdminDashboard();
+    showToast("Login berhasil! Selamat datang Admin");
+  } else {
+    loginError.textContent = "Username atau password salah!";
+    loginError.classList.remove("hidden");
+    setTimeout(() => {
+      loginError.classList.add("hidden");
+    }, 3000);
+  }
+});
+
+logoutBtn.addEventListener("click", () => {
+  hideAdminDashboard();
+  showToast("Anda telah logout");
+});
+
+// Check if user is already logged in on page load
+window.addEventListener("load", () => {
+  if (sessionStorage.getItem("adminLoggedIn") === "true") {
+    showAdminDashboard();
+  }
+});
+
+// Close modal when clicking outside
+adminLoginModal.addEventListener("click", (e) => {
+  if (e.target === adminLoginModal) {
+    closeLoginModalFunc();
+  }
+});
 
 renderProducts(products);
 updateCartPanel();

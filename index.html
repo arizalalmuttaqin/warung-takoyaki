@@ -3,24 +3,79 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>arizalalmuttaqin</title>
+  <title>Kay Takoyaki - Takoyaki, Roti Cane & Udon Terbaik</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="site-header">
-    <div class="brand">
-      <h1>Kay Takoyaki</h1>
-      <p>Takoyaki, Roti Cane, dan Udon dengan pilihan isi serta topping favorit.</p>
-    </div>
-    <div class="header-actions">
-      <div class="search-box">
-        <input id="searchInput" type="search" placeholder="Cari makanan..." />
+    <div class="header-top">
+      <div class="brand">
+        <h1>🦑 Kay Takoyaki</h1>
+        <p>Takoyaki, Roti Cane, dan Udon dengan pilihan isi serta topping favorit.</p>
+        <div class="contact-info">
+          <p class="phone"><a href="https://wa.me/081586986562" target="_blank">📞 081586986562</a></p>
+          <p class="address">📍 Jl. Raya Puspiptek No. 96, Muncul, Tangerang Selatan</p>
+        </div>
       </div>
-      <button id="cartToggle" class="cart-button">
-        Keranjang <span id="cartCount">0</span>
-      </button>
+      <div class="header-actions">
+        <div class="search-box">
+          <input id="searchInput" type="search" placeholder="Cari makanan..." />
+        </div>
+        <button id="cartToggle" class="cart-button">
+          🛒 Keranjang <span id="cartCount">0</span>
+        </button>
+        <button id="adminLoginBtn" class="admin-button">
+          👤 Admin
+        </button>
+      </div>
     </div>
   </header>
+
+  <!-- Admin Login Modal -->
+  <div id="adminLoginModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Login Admin</h2>
+        <button id="closeLoginModal" class="modal-close">×</button>
+      </div>
+      <form id="adminLoginForm" class="login-form">
+        <div class="form-group">
+          <label for="adminUsername">Username:</label>
+          <input type="text" id="adminUsername" placeholder="Masukkan username" required />
+        </div>
+        <div class="form-group">
+          <label for="adminPassword">Password:</label>
+          <input type="password" id="adminPassword" placeholder="Masukkan password" required />
+        </div>
+        <button type="submit" class="btn-submit">Login</button>
+      </form>
+      <div id="loginError" class="login-error hidden"></div>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard -->
+  <div id="adminDashboard" class="admin-dashboard hidden">
+    <div class="admin-header">
+      <h1>Dashboard Admin - Kay Takoyaki</h1>
+      <button id="logoutBtn" class="logout-button">Logout</button>
+    </div>
+    <div class="admin-container">
+      <div class="admin-stats">
+        <div class="stat-card">
+          <h3>Total Pesanan</h3>
+          <p id="totalOrders" class="stat-value">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>Total Pendapatan</h3>
+          <p id="totalRevenue" class="stat-value">Rp0</p>
+        </div>
+      </div>
+      <div class="orders-section">
+        <h2>Daftar Pesanan Terbaru</h2>
+        <div id="adminOrdersList" class="orders-list"></div>
+      </div>
+    </div>
+  </div>
 
   <main class="content-layout">
     <section class="products-section">
@@ -66,8 +121,8 @@
           <div id="courierOptions" class="courier-options hidden">
             <label for="courierSelect">Pilih jasa pengiriman</label>
             <select id="courierSelect">
-              <option value="jne">JNE (+Rp10.000)</option>
-              <option value="jnt">J&T (+Rp20.000)</option>
+              <option value="jne">gosend (+Rp10.000)</option>
+              <option value="jnt">shopyfood (+Rp20.000)</option>
               <option value="sicepat">SiCepat (+Rp30.000)</option>
             </select>
           </div>
